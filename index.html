@@ -35,6 +35,7 @@
     <div class="dev-actions">
       <button class="dev-btn" id="dev-day-btn" title="Dev: avança 1 dia">+1 Dia (dev)</button>
       <button class="dev-btn" id="dev-win-btn" title="Dev: simula vitória (+1 bola, máx 3/dia)">+1 Vitória (dev)</button>
+      <button class="dev-btn" id="dev-reset-ftue-btn" title="Dev: reseta FTUE — recarregue para ver de novo">Resetar FTUE (dev)</button>
     </div>
 
     <div class="tombola-meta">
@@ -67,6 +68,32 @@
     <p class="mission-popup-disambig" id="mission-popup-disambig"></p>
     <p class="mission-popup-reward" id="mission-popup-reward"></p>
   </div>
+</div>
+
+<!-- FTUE Beat A: three labeled callouts pointing at cartela / tombola / countdown -->
+<div class="ftue-overlay" id="ftue-beat-a" aria-hidden="true">
+  <div class="ftue-backdrop" id="ftue-beat-a-backdrop"></div>
+  <div class="ftue-callout ftue-callout--countdown" id="ftue-callout-countdown">
+    <span class="ftue-arrow ftue-arrow--up"></span>
+    <span class="ftue-caption-text">O evento termina em alguns dias.</span>
+  </div>
+  <div class="ftue-callout ftue-callout--tombola" id="ftue-callout-tombola">
+    <span class="ftue-arrow ftue-arrow--up"></span>
+    <span class="ftue-caption-text">Sorteie bolas para marcar os números.</span>
+  </div>
+  <div class="ftue-callout ftue-callout--cartela" id="ftue-callout-cartela">
+    <span class="ftue-caption-text">Complete linhas e ganhe prêmios.</span>
+    <span class="ftue-arrow ftue-arrow--down"></span>
+  </div>
+  <button class="ftue-entendi" id="ftue-beat-a-entendi">Entendi</button>
+</div>
+
+<!-- FTUE Beat B: animated pointer finger over a target mission tile with soft-block -->
+<div class="ftue-overlay" id="ftue-beat-b" aria-hidden="true">
+  <div class="ftue-backdrop ftue-backdrop--soft" id="ftue-beat-b-backdrop"></div>
+  <div class="ftue-pointer" id="ftue-pointer">👆</div>
+  <div class="ftue-caption-b" id="ftue-caption-b">Toque para ver detalhes da missão.</div>
+  <button class="ftue-pular" id="ftue-pular">Pular</button>
 </div>
 
 <script src="data.js"></script>
