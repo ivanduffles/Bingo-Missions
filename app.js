@@ -212,6 +212,25 @@ function wireMissionPopup() {
   });
 }
 
+// ---------- Rewards preview popup (UX §4.9) ----------
+
+function openRewardsPopup() {
+  document.getElementById('rewards-popup-backdrop').dataset.open = 'true';
+}
+
+function closeRewardsPopup() {
+  document.getElementById('rewards-popup-backdrop').dataset.open = 'false';
+}
+
+function wireRewardsPopup() {
+  const backdrop = document.getElementById('rewards-popup-backdrop');
+  document.getElementById('rewards-info-btn').addEventListener('click', openRewardsPopup);
+  document.getElementById('rewards-popup-close').addEventListener('click', closeRewardsPopup);
+  backdrop.addEventListener('click', function (e) {
+    if (e.target === backdrop) closeRewardsPopup();
+  });
+}
+
 // ---------- Sortear orchestration ----------
 
 function wait(ms) {
@@ -723,4 +742,5 @@ syncLedgerDOM();
 refreshUI();
 wireButtons();
 wireMissionPopup();
+wireRewardsPopup();
 maybeStartFTUE();

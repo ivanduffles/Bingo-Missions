@@ -15,6 +15,7 @@
   <header class="event-header">
     <button class="back-button" aria-label="Voltar">‹</button>
     <h1 class="event-name">Bingo da Rainha</h1>
+    <button class="rewards-info-btn" id="rewards-info-btn" aria-label="Ver recompensas do evento">🎁</button>
   </header>
 
   <div class="countdown-subtitle" id="countdown-subtitle">
@@ -67,6 +68,31 @@
     <p class="mission-popup-progress" id="mission-popup-progress"></p>
     <p class="mission-popup-disambig" id="mission-popup-disambig"></p>
     <p class="mission-popup-reward" id="mission-popup-reward"></p>
+  </div>
+</div>
+
+<!-- Rewards preview popup (in-event reward overview, opt-in via header icon) -->
+<div class="rewards-popup-backdrop" id="rewards-popup-backdrop" aria-hidden="true">
+  <div class="rewards-popup-card" role="dialog" aria-modal="true">
+    <button class="rewards-popup-close" id="rewards-popup-close" aria-label="Fechar">×</button>
+    <h2 class="rewards-popup-title">Recompensas do evento</h2>
+    <div class="rewards-popup-illustration">
+      <img class="rewards-popup-illustration-img" src="rewards-illustration.png" alt="" onerror="this.style.display='none'; this.parentElement.classList.add('rewards-popup-illustration--placeholder')" />
+    </div>
+    <ul class="rewards-popup-list">
+      <li class="rewards-popup-item">
+        <span class="rewards-popup-label">Linha normal</span>
+        <span class="rewards-popup-value">+50 moedas</span>
+      </li>
+      <li class="rewards-popup-item">
+        <span class="rewards-popup-label">Linha com missão</span>
+        <span class="rewards-popup-value">+150 moedas</span>
+      </li>
+      <li class="rewards-popup-item">
+        <span class="rewards-popup-label">Cartela completa</span>
+        <span class="rewards-popup-value">Canastra nova + 2.100 moedas</span>
+      </li>
+    </ul>
   </div>
 </div>
 
