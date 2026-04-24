@@ -595,6 +595,112 @@ function wireButtons() {
   document.getElementById('sortear-btn').addEventListener('click', doSortear);
   document.getElementById('dev-day-btn').addEventListener('click', devAddDay);
   document.getElementById('dev-win-btn').addEventListener('click', devAddWin);
+  document.getElementById('dev-reset-ftue-btn').addEventListener('click', devResetFTUE);
+}
+
+// ---------- FTUE (Phase 4 — Tier 2 only) ----------
+
+const FTUE_BEAT_A_KEY = 'bingo-ftue-beat-a';
+const FTUE_BEAT_B_KEY = 'bingo-ftue-beat-b';
+const FTUE_BEAT_B_TARGET_MISSION = 'limpas';   // Canastras Limpas (lowest goal, simplest)
+const FTUE_PULAR_AFTER_MS = 30000;
+
+function ftueFlag(key) {
+  try { return localStorage.getItem(key) === 'true'; }
+  catch (e) { return false; }
+}
+
+function setFtueFlag(key, val) {
+  try { localStorage.setItem(key, val ? 'true' : 'false'); }
+  catch (e) {}
+}
+
+function maybeStartFTUE() {
+  if (!ftueFlag(FTUE_BEAT_A_KEY)) {
+    showFtueBeatA();
+  } else if (!ftueFlag(FTUE_BEAT_B_KEY)) {
+    showFtueBeatB();
+  }
+}
+
+function showFtueBeatA() {
+  const overlay = document.getElementById('ftue-beat-a');
+  overlay.dataset.visible = 'true';
+
+  let dismissed = false;
+  const dismiss = function () {
+    if (dismissed) return;
+    dismissed = true;
+    overlay.dataset.visible = 'false';
+    setFtueFlag(FTUE_BEAT_A_KEY, true);
+    setTimeout(function () { showFtueBeatB(); }, 300);
+  };
+
+  document.getElementById('ftue-beat-a-entendi').addEventListener('click', dismiss);
+  document.getElementById('ftue-beat-a-backdrop').addEventListener('click', dismiss);
+}
+
+function showFtueBeatB() {
+  if (ftueFlag(FTUE_BEAT_B_KEY)) return;
+
+  const overlay = document.getElementById('ftue-beat-b');
+  const pularBtn = document.getElementById('ftue-pular');
+  const missionTile = document.querySelector('.tile[data-mission-id="' + FTUE_BEAT_B_TARGET_MISSION + '"]');
+  if (!missionTile) return;
+
+  missionTile.dataset.ftueTarget = 'true';
+  overlay.dataset.visible = 'true';
+
+  positionFtueBeatBElements();
+  window.addEventListener('resize', positionFtueBeatBElements);
+
+  const pularTimer = setTimeout(function () {
+    pularBtn.dataset.visible = 'true';
+  }, FTUE_PULAR_AFTER_MS);
+
+  let dismissed = false;
+  let onTargetPointerdown;
+  const dismiss = function () {
+    if (dismissed) return;
+    dismissed = true;
+    overlay.dataset.visible = 'false';
+    pularBtn.dataset.visible = 'false';
+    delete missionTile.dataset.ftueTarget;
+    setFtueFlag(FTUE_BEAT_B_KEY, true);
+    clearTimeout(pularTimer);
+    window.removeEventListener('resize', positionFtueBeatBElements);
+    if (onTargetPointerdown) missionTile.removeEventListener('pointerdown', onTargetPointerdown);
+  };
+
+  // Any interaction with the target tile ends Beat B. The normal mission handler
+  // still runs (short tap -> popup, long press -> dev advance), so the lesson lands.
+  onTargetPointerdown = function () { dismiss(); };
+  missionTile.addEventListener('pointerdown', onTargetPointerdown);
+
+  pularBtn.addEventListener('click', dismiss);
+}
+
+function positionFtueBeatBElements() {
+  const missionTile = document.querySelector('.tile[data-ftue-target="true"]');
+  const pointer = document.getElementById('ftue-pointer');
+  const caption = document.getElementById('ftue-caption-b');
+  if (!missionTile) return;
+  const rect = missionTile.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+
+  // Pointer sits just below the tile's bottom edge, pointing up at it
+  pointer.style.left = centerX + 'px';
+  pointer.style.top = (rect.bottom + 4) + 'px';
+
+  // Caption floats above the tile, anchored to its top
+  caption.style.left = centerX + 'px';
+  caption.style.top = (rect.top - 12) + 'px';
+}
+
+function devResetFTUE() {
+  setFtueFlag(FTUE_BEAT_A_KEY, false);
+  setFtueFlag(FTUE_BEAT_B_KEY, false);
+  showToast('FTUE resetada — recarregue a página para ver');
 }
 
 function showToast(msg) {
@@ -617,3 +723,4 @@ syncLedgerDOM();
 refreshUI();
 wireButtons();
 wireMissionPopup();
+maybeStartFTUE();
