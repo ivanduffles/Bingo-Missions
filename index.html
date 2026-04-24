@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<!-- PROTOTYPE - NOT FOR PRODUCTION -->
+<!-- Question: Does the Bingo event core loop (Sortear -> stamps -> line close) feel right on mobile? -->
+<!-- Date: 2026-04-24 -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bingo da Rainha — Prototype</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="event-screen">
+
+  <header class="event-header">
+    <button class="back-button" aria-label="Voltar">‹</button>
+    <h1 class="event-name">Bingo da Rainha</h1>
+  </header>
+
+  <div class="countdown-subtitle" id="countdown-subtitle">
+    Evento termina em 7 dias
+  </div>
+
+  <section class="tombola-zone">
+    <div class="tombola-top">
+      <div class="drum" aria-hidden="true">
+        <div class="drum-body" id="drum-body"></div>
+        <div class="drum-spout"></div>
+      </div>
+      <div class="ball-ledger" id="ball-ledger" aria-hidden="true"></div>
+    </div>
+
+    <button class="sortear" id="sortear-btn">Sortear</button>
+
+    <div class="dev-actions">
+      <button class="dev-btn" id="dev-day-btn" title="Dev: avança 1 dia">+1 Dia (dev)</button>
+      <button class="dev-btn" id="dev-win-btn" title="Dev: simula vitória (+1 bola, máx 3/dia)">+1 Vitória (dev)</button>
+    </div>
+
+    <div class="tombola-meta">
+      <div class="ball-counter" id="ball-counter">🎱 10 bolas</div>
+    </div>
+  </section>
+
+  <div class="cartela-wrapper">
+    <section class="cartela" id="cartela">
+      <!-- Tiles rendered by app.js -->
+    </section>
+  </div>
+
+</div>
+
+<!-- Ball travel stage: fixed overlay for balls, sweeps, currency floats -->
+<div class="ball-stage" id="ball-stage" aria-hidden="true"></div>
+
+<!-- First-line-in-event banner -->
+<div class="first-line-banner" id="first-line-banner" aria-hidden="true">
+  <span class="banner-text"></span>
+</div>
+
+<!-- Mission tap popup -->
+<div class="mission-popup-backdrop" id="mission-popup-backdrop" aria-hidden="true">
+  <div class="mission-popup-card" role="dialog" aria-modal="true">
+    <button class="mission-popup-close" id="mission-popup-close" aria-label="Fechar">×</button>
+    <h2 class="mission-popup-title" id="mission-popup-title"></h2>
+    <p class="mission-popup-progress" id="mission-popup-progress"></p>
+    <p class="mission-popup-disambig" id="mission-popup-disambig"></p>
+    <p class="mission-popup-reward" id="mission-popup-reward"></p>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

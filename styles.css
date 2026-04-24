@@ -1,0 +1,723 @@
+/* PROTOTYPE - NOT FOR PRODUCTION */
+/* Question: Does the Bingo event core loop (Sortear -> stamps -> line close) feel right on mobile? */
+/* Date: 2026-04-24 */
+
+/* ---------- Base ---------- */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --table-green-dark:  #1E5A32;
+  --table-green:       #2A7A44;
+  --table-green-light: #4AA060;
+  --cream:             #F5EFE0;
+  --tile-bg:           #FFFAF0;
+  --tile-border:       #D4C9AE;
+  --ink:               #2B2520;
+  --ink-muted:         #7A6F61;
+  --accent-amber:      #E9A830;
+  --accent-amber-dark: #B07E1C;
+  --accent-amber-light:#F4C668;
+  --mission-tile-bg:   #F2E6C8;
+  --free-tile-bg:      #FFE8A3;
+  --on-green:          #F5EFE0;
+  --on-green-muted:    rgba(245, 239, 224, 0.75);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--table-green-dark);
+  color: var(--ink);
+  display: flex;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Event screen ---------- */
+
+.event-screen {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  /* Card-table green with a soft sunburst bloom from top-center, evoking the Buraco main screen */
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 10%,
+      var(--table-green-light) 0%,
+      var(--table-green) 45%,
+      var(--table-green-dark) 100%);
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  position: relative;
+}
+
+/* ---------- Header (~6%) ---------- */
+
+.event-header {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+
+.back-button {
+  width: 40px;
+  height: 40px;
+  font-size: 30px;
+  background: transparent;
+  border: none;
+  color: var(--on-green);
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.event-name {
+  flex: 1;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--on-green);
+  margin-right: 40px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ---------- Countdown subtitle (~3%) ---------- */
+
+.countdown-subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: var(--on-green-muted);
+  padding: 0 8px 4px;
+  flex-shrink: 0;
+}
+
+/* ---------- Tombola zone ---------- */
+
+.tombola-zone {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px 6px;
+  gap: 10px;
+}
+
+.tombola-top {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.drum {
+  width: 76px;
+  height: 76px;
+  position: relative;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+/* Ball ledger: invisible 4x5 grid to the right of the drum.
+   Empty slots render as transparent space; filled slots show the drawn number. */
+.ball-ledger {
+  display: grid;
+  grid-template-columns: repeat(4, 22px);
+  grid-template-rows: repeat(5, 22px);
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ball-ledger-slot {
+  width: 22px;
+  height: 22px;
+  /* intentionally invisible when empty */
+}
+
+.ledger-ball {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #FFE8A3 45%, #D99A28 100%);
+  border: 1.5px solid #8E5A14;
+  color: #3A2400;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  animation: ledgerBallPop 180ms ease-out;
+}
+
+@keyframes ledgerBallPop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.drum-body {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, #FFFFFF 0%, #E5DCC2 30%, #C4B691 70%, #8E7F5C 100%);
+  border: 2px solid #6B5F42;
+  transform-origin: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.drum-body--spinning {
+  animation: drumSpin 1200ms linear;
+}
+
+@keyframes drumSpin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(1080deg); }
+}
+
+.drum-spout {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 14px;
+  background: #6B5F42;
+  border-radius: 0 0 6px 6px;
+}
+
+/* ---------- Sortear button (primary, juiced) ---------- */
+
+.sortear {
+  background: linear-gradient(180deg, var(--accent-amber-light) 0%, var(--accent-amber) 60%, var(--accent-amber-dark) 100%);
+  color: white;
+  border: none;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  font-family: inherit;
+  padding: 14px 60px;
+  border-radius: 28px;
+  cursor: pointer;
+  min-height: 56px;
+  min-width: 200px;
+  box-shadow: 0 4px 0 var(--accent-amber-dark), 0 5px 12px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(120, 70, 10, 0.45);
+}
+
+.sortear:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--accent-amber-dark), 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.sortear:disabled,
+.sortear.sortear--disabled {
+  background: linear-gradient(180deg, #B5A888 0%, #8E8165 60%, #6E6147 100%);
+  color: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 3px 0 #564B34;
+  cursor: not-allowed;
+  transform: none;
+  text-shadow: none;
+}
+
+/* ---------- Dev buttons ---------- */
+
+.dev-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.dev-btn {
+  background: rgba(245, 239, 224, 0.08);
+  color: var(--on-green-muted);
+  border: 1px dashed rgba(245, 239, 224, 0.55);
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 32px;
+}
+
+.dev-btn:active { transform: translateY(1px); }
+
+.dev-btn:disabled,
+.dev-btn.dev-btn--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ---------- Tombola meta ---------- */
+
+.tombola-meta {
+  text-align: center;
+  line-height: 1.3;
+}
+
+.ball-counter {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--on-green);
+  letter-spacing: 0.01em;
+}
+
+/* ---------- Cartela wrapper + grid ---------- */
+
+.cartela-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6px 16px 16px;
+  min-height: 0;
+}
+
+.cartela {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 4px;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- Tiles (shared base) ---------- */
+
+.tile {
+  background: var(--tile-bg);
+  border: 1px solid var(--tile-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  user-select: none;
+}
+
+.tile--free {
+  background: var(--free-tile-bg);
+  color: var(--accent-amber-dark);
+  flex-direction: column;
+  gap: 0;
+}
+
+.free-star { font-size: 24px; line-height: 1; }
+
+.free-label {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin-top: 1px;
+}
+
+/* ---------- Number tile stamp (slowed 50% for savor) ---------- */
+
+.tile--number.stamped {
+  color: var(--accent-amber-dark);
+  background: #FFF6DC;
+}
+
+.tile--number.stamped::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 2px solid var(--accent-amber-dark);
+  border-radius: 50%;
+  opacity: 0;
+  animation: numberStamp 630ms cubic-bezier(0.3, 1.5, 0.5, 1) forwards;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes numberStamp {
+  0%   { opacity: 0; transform: scale(2.4) rotate(-14deg); }
+  55%  { opacity: 0.95; transform: scale(0.82) rotate(-14deg); }
+  100% { opacity: 0.85; transform: scale(1) rotate(-14deg); }
+}
+
+.tile--number.stamped { z-index: 0; }
+
+/* ---------- Mission tile (Phase 2) ---------- */
+
+.tile--mission {
+  background: var(--mission-tile-bg);
+  flex-direction: column;
+  padding: 4px 2px;
+  gap: 2px;
+  cursor: pointer;
+  position: relative;
+  transition: background 300ms ease;
+}
+
+.mission-icon-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 80%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mission-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 0%;
+  background: linear-gradient(to top, #D99A28, #EFB547);
+  transition: height 320ms cubic-bezier(0.35, 0.9, 0.4, 1);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.mission-icon {
+  position: relative;
+  z-index: 1;
+  font-size: 22px;
+  line-height: 1;
+  transition: filter 300ms ease, opacity 300ms ease;
+}
+
+/* Suit-only mission icons (e.g. Faça Canastras -> spade) render as typographic glyphs;
+   give them more visual weight than emoji glyphs. */
+.mission-icon.mission-icon--suit {
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.mission-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink-muted);
+  padding: 0 1px;
+  hyphens: auto;
+  transition: color 300ms ease, font-weight 300ms ease;
+}
+
+.tile--mission[data-state="not-started"] .mission-icon {
+  filter: grayscale(70%);
+  opacity: 0.55;
+}
+
+.tile--mission[data-state="in-progress"] .mission-icon {
+  filter: grayscale(20%);
+  opacity: 0.9;
+}
+
+.tile--mission[data-state="completed"] {
+  background: var(--free-tile-bg);
+}
+
+.tile--mission[data-state="completed"] .mission-icon {
+  filter: none;
+  opacity: 1;
+}
+
+.tile--mission[data-state="completed"] .mission-label {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.mission-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #B6383E;
+  border: 2px solid #B6383E;
+  padding: 2px 4px;
+  border-radius: 2px;
+  background: rgba(255, 250, 240, 0.4);
+  pointer-events: none;
+  white-space: nowrap;
+  text-transform: uppercase;
+  z-index: 3;
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(-14deg) scale(1);
+}
+
+.tile--mission[data-state="completed"] .mission-stamp {
+  animation: stampDrop 520ms cubic-bezier(0.3, 1.5, 0.5, 1) forwards;
+}
+
+@keyframes stampDrop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-14deg) scale(2.2); }
+  55%  { opacity: 1; transform: translate(-50%, -50%) rotate(-14deg) scale(0.82); }
+  100% { opacity: 0.95; transform: translate(-50%, -50%) rotate(-14deg) scale(1); }
+}
+
+/* ---------- Line closure ---------- */
+
+.tile.line-closed {
+  box-shadow: inset 0 0 0 2px rgba(217, 154, 40, 0.55);
+}
+
+.tile.line-closed::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(217, 154, 40, 0.10);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ---------- Ball stage (fixed overlay) ---------- */
+
+.ball-stage {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.ball {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #FFE8A3 45%, #D99A28 100%);
+  border: 1.5px solid #8E5A14;
+  color: #3A2400;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transform: translate(-50%, -50%) scale(1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  will-change: transform, opacity;
+}
+
+/* ---------- Line sweep VFX ---------- */
+
+.line-sweep {
+  position: fixed;
+  pointer-events: none;
+  z-index: 60;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.line-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    rgba(255, 232, 163, 0) 0%,
+    rgba(255, 232, 163, 0.9) 45%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 232, 163, 0.9) 55%,
+    rgba(255, 232, 163, 0) 100%);
+  transform: translateX(-100%);
+  animation: sweepHorizontal 800ms ease-out forwards;
+  mix-blend-mode: screen;
+}
+
+.line-sweep--col::after {
+  background: linear-gradient(180deg,
+    rgba(255, 232, 163, 0) 0%,
+    rgba(255, 232, 163, 0.9) 45%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 232, 163, 0.9) 55%,
+    rgba(255, 232, 163, 0) 100%);
+  transform: translateY(-100%);
+  animation: sweepVertical 800ms ease-out forwards;
+}
+
+@keyframes sweepHorizontal {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes sweepVertical {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* ---------- Currency float ---------- */
+
+.currency-float {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 70;
+  font-weight: 900;
+  font-size: 19px;
+  color: var(--accent-amber-light);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4), 0 0 10px rgba(255, 232, 163, 0.7);
+  animation: currencyFloat 1100ms cubic-bezier(0.3, 0.6, 0.4, 1) forwards;
+  white-space: nowrap;
+}
+
+@keyframes currencyFloat {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  20%  { opacity: 1; transform: translate(-50%, -90%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -170%) scale(1); }
+}
+
+/* ---------- First-line banner ---------- */
+
+.first-line-banner {
+  position: fixed;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-amber);
+  color: white;
+  padding: 12px 28px;
+  border-radius: 0 0 16px 16px;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  z-index: 80;
+  transition: top 420ms cubic-bezier(0.3, 1.4, 0.5, 1);
+  white-space: nowrap;
+}
+
+.first-line-banner[data-visible="true"] { top: 0; }
+
+/* ---------- Mission tap popup ---------- */
+
+.mission-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mission-popup-backdrop[data-open="true"] { display: flex; }
+
+.mission-popup-card {
+  background: var(--cream);
+  border-radius: 16px;
+  max-width: 360px;
+  width: 100%;
+  padding: 24px 20px 20px;
+  position: relative;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.mission-popup-close {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 6px 10px;
+}
+
+.mission-popup-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+
+.mission-popup-progress {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-amber-dark);
+  margin-bottom: 12px;
+}
+
+.mission-popup-disambig {
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.mission-popup-reward {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+/* ---------- Toast ---------- */
+
+.toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 200ms ease, transform 200ms ease;
+  pointer-events: none;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+.toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .mission-fill { transition: none; }
+  .mission-icon { transition: none; }
+  .mission-label { transition: none; }
+  .tile--mission { transition: none; }
+  .tile--mission[data-state="completed"] .mission-stamp {
+    animation: none;
+    opacity: 0.95;
+  }
+  .drum-body--spinning { animation: none; }
+  .ball { transition: none !important; }
+  .tile--number.stamped::after { animation: none; opacity: 0.85; }
+  .line-sweep::after { animation: none; opacity: 0; }
+  .currency-float { animation: none; opacity: 0; }
+  .first-line-banner { transition: none; }
+}
